@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --font-press-start: "Press Start 2P", system-ui, sans-serif;
+  --font-dot-gothic: "DotGothic16", system-ui, sans-serif;
+
+  /* 16-bit SNES/GBA Color Palette */
+  --color-arcade-black: #1A1C2C; /* 偏紫黑的深空色 */
+  --color-arcade-white: #F4F4F4; /* 柔和的像素白 */
+  --color-arcade-green: #57B368; /* 经典的超任绿 */
+  --color-arcade-red: #E43B44; /* 饱满的复古红 */
+  --color-arcade-yellow: #FEE761; /* 塞尔达式的金黄 */
+  --color-arcade-blue: #3E8948; /* 偏青的蓝绿 */
+  --color-arcade-gray: #29366F; /* 游戏机外壳的深蓝灰 */
+  --color-arcade-pixel-gray: #94B0C2; /* 天空灰 */
+  --color-snes-purple: #5D275D; /* 经典的超任紫 */
+  --color-snes-light: #B13E53; /* 玫瑰红 */
+}
+
+/* Base resets for pixel perfect retro feel */
+@layer base {
+  html, body {
+    @apply bg-arcade-black text-arcade-white font-dot-gothic;
+    /* 16-bit 时代经典的网格背景 */
+    background-image: 
+      linear-gradient(var(--color-arcade-gray) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-arcade-gray) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: center top;
+    
+    -webkit-font-smoothing: none;
+    text-rendering: crispEdges;
+    overflow-x: hidden;
+  }
+
+  img, canvas, video {
+    image-rendering: pixelated;
+  }
+}
+
+/* Custom utilities for Retro UI */
+@layer utilities {
+  .pixel-border {
+    /* 16-bit 厚重边框效果：带高光和暗部阴影 */
+    border: 4px solid var(--color-arcade-white);
+    border-bottom-color: var(--color-arcade-pixel-gray);
+    border-right-color: var(--color-arcade-pixel-gray);
+    background-color: var(--color-arcade-gray);
+  }
+
+  .pixel-border-green {
+    border: 4px solid var(--color-arcade-green);
+    border-bottom-color: #3E8948; /* 暗绿 */
+    border-right-color: #3E8948;
+    background-color: var(--color-arcade-black);
+  }
+  
+  .pixel-border-red {
+    border: 4px solid var(--color-arcade-red);
+    border-bottom-color: var(--color-snes-light);
+    border-right-color: var(--color-snes-light);
+  }
+
+  .pixel-shadow {
+    /* 更柔和但有厚度的像素阴影 */
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.5);
+  }
+
+  .pixel-shadow-yellow {
+    box-shadow: 4px 4px 0px var(--color-snes-purple);
+  }
+
+  .pixel-corners {
+    clip-path: polygon(
+      0 4px, 4px 4px, 4px 0,
+      calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+      100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+      4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    );
+  }
+
+  .animate-blink {
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .animate-marquee {
+    animation: marquee 20s linear infinite;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+}

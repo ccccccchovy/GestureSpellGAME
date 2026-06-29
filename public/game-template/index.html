@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesture Spell - Blank Game Template</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            color: #39FF14;
+            font-family: monospace;
+        }
+        #game-canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        #debug-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="debug-layer">
+        <h2>Game Template</h2>
+        <p id="env-status">Waiting for Platform...</p>
+        <p id="hand-status">No Hand Detected</p>
+        <p id="score-display">Score: 0</p>
+    </div>
+
+    <!-- 游戏主画布 -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- 引入平台 SDK -->
+    <script src="../sdk/gesture-spell-sdk.js"></script>
+    
+    <script>
+        // 1. 初始化 SDK
+        const sdk = new GestureSpellSDK();
+
+        // 2. 获取 DOM 元素
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const envStatus = document.getElementById('env-status');
+        const handStatus = document.getElementById('hand-status');
+        const scoreDisplay = document.getElementById('score-display');
+
+        // 3. 游戏状态
+        let score = 0;
+        let cursorX = canvas.width / 2;
+        let cursorY = canvas.height / 2;
+        let isFist = false;
+
+        // 调整画布尺寸
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // 4. 监听平台事件
+        sdk.onReady((env) => {
+            envStatus.innerText = `Platform Connected! Player: ${env.user.username}`;
+        });
+
+        sdk.onHandData((data) => {
+            if (data.hands && data.hands.length > 0) {
+                const hand = data.hands[0]; // 取第一只手
+                
+                // 将食指坐标(归一化 0~1)映射到屏幕物理坐标
+                const indexFinger = hand.landmarks[8];
+                cursorX = indexFinger.x * canvas.width;
+                cursorY = indexFinger.y * canvas.height;
+
+                // 识别手势
+                isFist = (hand.currentGesture === 'FIST');
+                handStatus.innerText = `Hand: ${hand.handedness} | Gesture: ${hand.currentGesture}`;
+
+                // 游戏逻辑：如果捏拳头，增加分数
+                if (isFist) {
+                    score += 1;
+                    scoreDisplay.innerText = `Score: ${score}`;
+                }
+            } else {
+                handStatus.innerText = 'No Hand Detected';
+                isFist = false;
+            }
+        });
+
+        // 5. 游戏主循环 (Render Loop)
+        function gameLoop() {
+            // 清空画布
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制准星
+            ctx.beginPath();
+            ctx.arc(cursorX, cursorY, 20, 0, Math.PI * 2);
+            ctx.fillStyle = isFist ? '#FF003C' : '#39FF14'; // 握拳变红，张开变绿
+            ctx.fill();
+            ctx.closePath();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 启动游戏循环
+        gameLoop();
+
+        // 6. 通知平台游戏已就绪
+        sdk.ready();
+
+        // 示例：按 ESC 键结束游戏并上报分数
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                sdk.submitScore(score);
+                sdk.gameOver();
+            }
+        });
+    </script>
+</body>
+</html>

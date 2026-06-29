@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Demo Game</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #222; color: #fff; font-family: monospace; }
+        #canvas { display: block; }
+        #ui { position: absolute; top: 10px; left: 10px; z-index: 10; font-size: 20px;}
+        #cursor { position: absolute; width: 20px; height: 20px; background: red; border-radius: 50%; pointer-events: none; display: none; transform: translate(-50%, -50%);}
+    </style>
+</head>
+<body>
+    <div id="ui">
+        Score: <span id="score">0</span><br>
+        Status: <span id="status">WAITING FOR PARENT...</span>
+    </div>
+    <div id="cursor"></div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const statusEl = document.getElementById('status');
+        const cursorEl = document.getElementById('cursor');
+
+        let score = 0;
+        let isReady = false;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        // SDK Mock
+        window.addEventListener('message', (e) => {
+            const { type, payload } = e.data;
+            
+            if (type === 'INIT_ENV') {
+                statusEl.innerText = `READY (Player: ${payload.user.username})`;
+                statusEl.style.color = '#39FF14';
+                isReady = true;
+            }
+            
+            if (type === 'AI_HAND_DATA' && isReady) {
+                if (payload.hands && payload.hands.length > 0) {
+                    const hand = payload.hands[0];
+                    const indexTip = hand.landmarks[8]; // 食指
+                    
+                    // 映射到屏幕坐标
+                    const x = indexTip.x * window.innerWidth;
+                    const y = indexTip.y * window.innerHeight;
+                    
+                    cursorEl.style.display = 'block';
+                    cursorEl.style.left = x + 'px';
+                    cursorEl.style.top = y + 'px';
+
+                    // 简单互动：如果捏紧拳头，增加分数
+                    if (hand.currentGesture === 'FIST') {
+                        cursorEl.style.background = '#39FF14';
+                        score += 1;
+                        scoreEl.innerText = score;
+                    } else {
+                        cursorEl.style.background = 'red';
+                    }
+                } else {
+                    cursorEl.style.display = 'none';
+                }
+            }
+        });
+
+        // 告诉父窗口加载完毕
+        window.parent.postMessage({ type: 'GAME_READY' }, '*');
+
+        // 测试：10秒后自动结束游戏并上报分数
+        setTimeout(() => {
+            statusEl.innerText = 'GAME OVER';
+            statusEl.style.color = 'red';
+            window.parent.postMessage({ type: 'SUBMIT_SCORE', payload: { score } }, '*');
+            window.parent.postMessage({ type: 'GAME_OVER' }, '*');
+        }, 10000);
+    </script>
+</body>
+</html>
